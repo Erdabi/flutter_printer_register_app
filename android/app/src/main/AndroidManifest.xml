@@ -1,8 +1,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+<!-- Netzwerkdrucker -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Bluetooth (bis Android 11) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
+
+    <!-- Bluetooth (Android 12+) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
+    <!-- Für BLE-Scans kann Standort nötig sein (je nach Hersteller/ROM) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- USB-Host (Android als Host für USB-Thermodrucker) -->
+    <uses-feature android:name="android.hardware.usb.host" />
+
     <application
         android:label="flutter_printer_register_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+         <receiver
+            android:name="com.codingdevs.thermal_printer.usb.UsbReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.ACTION_USB_PERMISSION" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+        </receiver>
         <activity
             android:name=".MainActivity"
             android:exported="true"
