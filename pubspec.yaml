@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  thermal_printer: ^1.0.5        # TCP/BLE/BT/USB Connector
+  esc_pos_utils_plus: ^2.0.3      # ESC/POS Ticket-Generator
+  intl: ^0.19.0                   # Datumsformatierung
+  permission_handler: ^11.3.1     # Runtime-Permissions (Android 12+)
+
 
 dev_dependencies:
   flutter_test:
