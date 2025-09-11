@@ -9,7 +9,8 @@
 
     <!-- Bluetooth (Android 12+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+    android:usesPermissionFlags="neverForLocation" />
 
     <!-- Für BLE-Scans kann Standort nötig sein (je nach Hersteller/ROM) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
