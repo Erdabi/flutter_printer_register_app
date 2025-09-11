@@ -27,8 +27,8 @@ class PrinterService {
           type: PrinterType.usb,
           model: UsbPrinterInput(
             name: 'USB',
-            productId: cfg.usbProductId!,
-            vendorId: cfg.usbVendorId!,
+            productId: cfg.usbProductId, // String
+    vendorId: cfg.usbVendorId,
           ),
         );
         break;
@@ -58,7 +58,8 @@ class PrinterService {
     }
   }
 
-  Future<void> disconnect(PrinterChannel ch) => _pm.disconnect(_mapType(ch));
+  Future<void> disconnect(PrinterChannel ch) => _pm.disconnect(type: _mapType(ch));  // ✅
+
 
   Future<void> sendBytes(PrinterConfig cfg, List<int> bytes) async {
     await _pm.send(type: _mapType(cfg.channel), bytes: bytes);
