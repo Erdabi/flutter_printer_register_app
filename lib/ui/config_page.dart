@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/printer_config.dart';
 import '../services/printer_service.dart';
-import 'dart:async';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({super.key, required this.initial});
@@ -14,6 +14,7 @@ class ConfigPage extends StatefulWidget {
 class _ConfigPageState extends State<ConfigPage> {
   late PrinterConfig cfg;
   final _svc = PrinterService();
+
   final _ip = TextEditingController();
   final _port = TextEditingController(text: '9100');
 
@@ -44,10 +45,17 @@ class _ConfigPageState extends State<ConfigPage> {
     super.dispose();
   }
 
+  String? _idToString(dynamic v) {
+    if (v == null) return null;
+    if (v is String) return v;
+    if (v is int) return v.toRadixString(16).padLeft(4, '0'); // e.g. "1A2B"
+    return v.toString();
+  }
+
   void _startScan() {
     _found.clear();
     _scanSub?.cancel();
-    final isBle = false; // bei Bedarf BLE aktivieren
+    const isBle = false; // enable if you need BLE
     _scanSub = _svc.discovery(cfg.channel, isBle: isBle).listen((d) {
       setState(() {
         _found.add({
@@ -61,43 +69,56 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   Widget _networkFields() => Column(
-    children: [
-      TextField(controller: _ip, decoration: const InputDecoration(labelText: 'IP-Adresse')),
-      TextField(controller: _port, decoration: const InputDecoration(labelText: 'Port (Standard 9100)'), keyboardType: TextInputType.number),
-    ],
-  );
+        children: [
+          TextField(
+            controller: _ip,
+            decoration: const InputDecoration(labelText: 'IP-Adresse'),
+          ),
+          TextField(
+            controller: _port,
+            decoration: const InputDecoration(labelText: 'Port (Standard 9100)'),
+            keyboardType: TextInputType.number,
+          ),
+        ],
+      );
 
   Widget _scanList() => Column(
-    children: [
-      Row(
         children: [
-          ElevatedButton.icon(onPressed: _startScan, icon: const Icon(Icons.search), label: const Text('Suchen')),
-          const SizedBox(width: 12),
-          Text('Gefunden: ${_found.length}'),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: _startScan,
+                icon: const Icon(Icons.search),
+                label: const Text('Suchen'),
+              ),
+              const SizedBox(width: 12),
+              Text('Gefunden: ${_found.length}'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ..._found.map((e) => ListTile(
+                title: Text(e['name']?.toString() ?? 'Unbekannt'),
+                subtitle: Text([
+                  if (e['address'] != null) 'Addr: ${e['address']}',
+                  if (e['vendorId'] != null)
+                    'VID: ${_idToString(e["vendorId"])}',
+                  if (e['productId'] != null)
+                    'PID: ${_idToString(e["productId"])}',
+                ].join('  |  ')),
+                onTap: () {
+                  setState(() {
+                    if (cfg.channel == PrinterChannel.bluetooth) {
+                      cfg.btName = e['name']?.toString();
+                      cfg.btAddress = e['address']?.toString();
+                    } else if (cfg.channel == PrinterChannel.usb) {
+                      cfg.usbVendorId = _idToString(e['vendorId']);
+                      cfg.usbProductId = _idToString(e['productId']);
+                    }
+                  });
+                },
+              )),
         ],
-      ),
-      const SizedBox(height: 8),
-      ..._found.map((e) => ListTile(
-        title: Text(e['name']?.toString() ?? 'Unbekannt'),
-        subtitle: Text([
-          if (e['address'] != null) 'Addr: ${e['address']}',
-          if (e['vendorId'] != null) 'VID: ${e['vendorId']}',
-          if (e['productId'] != null) 'PID: ${e['productId']}',
-        ].join('  |  ')),
-        onTap: () {
-          setState(() {
-            if (cfg.channel == PrinterChannel.bluetooth) {
-              cfg.btName = e['name']?.toString();
-              cfg.btAddress = e['address']?.toString();
-            } else if (cfg.channel == PrinterChannel.usb) {
-              cfg.usbVendorId = e['vendorId'] as int?;
-              cfg.usbProductId = e['productId'] as int?;
-            }
-          });
-        },
-      )),
-    ],
-  );
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -107,18 +128,27 @@ class _ConfigPageState extends State<ConfigPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Channel selection (SegmentedButton requires Material 3)
             SegmentedButton<PrinterChannel>(
               segments: const [
-                ButtonSegment(value: PrinterChannel.network, label: Text('Netzwerk')),
-                ButtonSegment(value: PrinterChannel.bluetooth, label: Text('Bluetooth')),
+                ButtonSegment(
+                    value: PrinterChannel.network, label: Text('Netzwerk')),
+                ButtonSegment(
+                    value: PrinterChannel.bluetooth, label: Text('Bluetooth')),
                 ButtonSegment(value: PrinterChannel.usb, label: Text('USB')),
               ],
               selected: {cfg.channel},
-              onSelectionChanged: (s) => setState(() => cfg.channel = s.first),
+              onSelectionChanged: (s) {
+                setState(() {
+                  cfg.channel = s.first;
+                });
+              },
             ),
             const SizedBox(height: 16),
             if (cfg.channel == PrinterChannel.network) _networkFields(),
-            if (cfg.channel == PrinterChannel.bluetooth || cfg.channel == PrinterChannel.usb) _scanList(),
+            if (cfg.channel == PrinterChannel.bluetooth ||
+                cfg.channel == PrinterChannel.usb)
+              _scanList(),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {

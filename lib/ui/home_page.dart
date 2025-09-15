@@ -15,7 +15,12 @@ class _HomePageState extends State<HomePage> {
   final _esc = EscPosHelper();
   final _svc = PrinterService();
 
-  PrinterConfig _cfg = PrinterConfig(channel: PrinterChannel.network, ip: '192.168.1.50', port: 9100);
+  PrinterConfig _cfg = PrinterConfig(
+    channel: PrinterChannel.network,
+    ip: '192.168.1.50',
+    port: 9100,
+  );
+
   bool _busy = false;
   String _status = 'Bereit';
 
@@ -29,10 +34,13 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       setState(() => _status = 'Fehler: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Fehler: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     } finally {
-      try { await _svc.disconnect(_cfg.channel); } catch (_) {}
+      try {
+        await _svc.disconnect(_cfg.channel); // named param handled inside
+      } catch (_) {}
       if (mounted) setState(() => _busy = false);
     }
   }
@@ -55,9 +63,22 @@ class _HomePageState extends State<HomePage> {
     if (updated != null) setState(() => _cfg = updated);
   }
 
+  String _connectionSubtitle() {
+    switch (_cfg.channel) {
+      case PrinterChannel.network:
+        return 'Netzwerk: ${_cfg.ip}:${_cfg.port}';
+      case PrinterChannel.bluetooth:
+        return 'Bluetooth: ${_cfg.btName ?? ''} (${_cfg.btAddress ?? ''})';
+      case PrinterChannel.usb:
+        return 'USB: VID=${_cfg.usbVendorId ?? ''}, PID=${_cfg.usbProductId ?? ''}';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final btnStyle = ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48));
+    final btnStyle =
+        ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48));
+
     return Scaffold(
       appBar: AppBar(title: const Text('Thermodrucker & Kassenschublade')),
       body: Padding(
@@ -67,14 +88,11 @@ class _HomePageState extends State<HomePage> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Verbindung'),
-              subtitle: Text(
-                switch (_cfg.channel) {
-                  PrinterChannel.network => 'Netzwerk: ${_cfg.ip}:${_cfg.port}',
-                  PrinterChannel.bluetooth => 'Bluetooth: ${_cfg.btName ?? ''} (${_cfg.btAddress ?? ''})',
-                  PrinterChannel.usb => 'USB: VID=${_cfg.usbVendorId?.toRadixString(16)}, PID=${_cfg.usbProductId?.toRadixString(16)}',
-                },
+              subtitle: Text(_connectionSubtitle()),
+              trailing: IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: _busy ? null : _openConfig,
               ),
-              trailing: IconButton(icon: const Icon(Icons.settings), onPressed: _busy ? null : _openConfig),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -93,7 +111,8 @@ class _HomePageState extends State<HomePage> {
             const Spacer(),
             Row(
               children: [
-                const Text('Status: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Status: ',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 Expanded(child: Text(_status)),
               ],
             ),

@@ -42,3 +42,20 @@ android {
 flutter {
     source = "../.."
 }
+// --- Patch for plugins missing a namespace (AGP 7/8), no imports needed ---
+subprojects {
+    if (name == "thermal_printer") {
+        plugins.withId("com.android.library") {
+            // Grab the Android 'library' extension and set 'namespace' via reflection
+            extensions.findByName("android")?.let { ext ->
+                try {
+                    val m = ext.javaClass.getMethod("setNamespace", String::class.java)
+                    m.invoke(ext, "com.codingdevs.thermal_printer")
+                    println("Applied namespace to :$name")
+                } catch (t: Throwable) {
+                    println("Could not set namespace for :$name -> ${t.message}")
+                }
+            }
+        }
+    }
+}

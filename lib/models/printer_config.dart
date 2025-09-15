@@ -6,8 +6,8 @@ class PrinterConfig {
   int port;
   String? btName;  // bluetooth classic/ble
   String? btAddress;
-  int? usbVendorId; // usb
-  int? usbProductId;
+  String? usbVendorId;   // <= String!
+  String? usbProductId;
 
   PrinterConfig({
     required this.channel,
