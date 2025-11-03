@@ -4,6 +4,15 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+repositories {
+    // let Gradle resolve AARs inside app/libs
+    flatDir { dirs("libs") }
+}
+
+dependencies {
+    // choose ONE style. Use this one now:
+    implementation(files("libs/printer-lib-3.2.0.aar"))
+}
 
 android {
     namespace = "com.example.flutter_printer_register_app"
@@ -32,8 +41,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
         }
     }
